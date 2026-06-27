@@ -59,7 +59,7 @@ int main()
         3  // col
     };
 
- draw_tetromion(current);
+ draw_tetromino(current);
  drawboard();
     return 0;
 }
