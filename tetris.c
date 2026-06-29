@@ -1,8 +1,20 @@
 #include <stdio.h>
+#include <unistd.h>  //for sleep / falling animation
+#include <stdlib.h>  //for clear terminal
+#include <termios.h> //for fast keyboard inupt and raw mode
+#include <sys/select.h> // to detect keyboard input without blocking
+
+void enable_raw_mode()
+{
+    struct termios t;
+    tcgetattr(0, &t);
+    t.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(0, TCSANOW, &t);
+}
 #define ROW 20
 #define COL 10
 
-struct Tetromino //shape
+struct Tetromino // shape
 {
     int shape[4][4];
     int row;
@@ -10,7 +22,7 @@ struct Tetromino //shape
 };
 int board[ROW][COL] = {0};
 
-void drawboard() //empty board
+void drawboard() // empty board
 {
     for (int i = 0; i < ROW; i++)
     {
@@ -20,9 +32,8 @@ void drawboard() //empty board
             if (board[i][j] == 1)
                 printf("[]");
             else
-                //printf("░░");
+                // printf("░░");
                 printf("::");
-
         }
         printf("|\n");
     }
@@ -31,7 +42,8 @@ void drawboard() //empty board
         printf("__");
     printf("+\n");
 }
-void draw_tetromino(struct Tetromino t) //printing shape
+
+void draw_tetromino(struct Tetromino t) // printing shape
 {
     int i, j;
     for (i = 0; i < 4; i++)
@@ -40,16 +52,38 @@ void draw_tetromino(struct Tetromino t) //printing shape
         {
             if (t.shape[i][j] == 1)
             {
-                board[i + t.row][j + t.col] =1;
+                board[i + t.row][j + t.col] = 1;
+            }
+        }
+    }
+}
+int kbhit()
+{
+    struct timeval tv = {0, 0};
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(0, &fds);
+    return select(1, &fds, NULL, NULL, &tv);
+}
+
+void erase_tetromino(struct Tetromino t)
+{
+    int i, j;
+    for (i = 0; i < 4; i++)
+    {
+        for (j = 0; j < 4; j++)
+        {
+            if (t.shape[i][j] == 1)
+            {
+                board[i + t.row][j + t.col] = 0;
             }
         }
     }
 }
 
-
-
 int main()
 {
+    enable_raw_mode();
     struct Tetromino current = {
         {{0, 0, 0, 0},
          {1, 1, 1, 1},
@@ -59,7 +93,40 @@ int main()
         3  // col
     };
 
- draw_tetromino(current);
- drawboard();
+    draw_tetromino(current);
+    drawboard();
+    while (1) // game control loop
+    {
+        erase_tetromino(current);
+        if (kbhit())
+        {
+            {
+                char key = getchar();
+                if (key == 'a' || key == 'A')
+                {
+                    if (current.col > 0)
+                    current.col--;
+                }
+                else if (key == 'd' || key == 'D')
+                {
+                    if (current.col < COL -4)
+                    current.col++;
+                }
+                /**else if (key == 's' || key == 'S')
+                {
+                    current.row++;
+                }**/
+                else if (key == 'q' || key == 'Q')
+                {
+                    break;
+                }
+            }
+        }
+        current.row++;
+        draw_tetromino(current);
+        system("clear");
+        drawboard();
+        usleep(500000);
+    }
     return 0;
 }
