@@ -1,7 +1,7 @@
 #include <stdio.h>
-#include <unistd.h>  //for sleep / falling animation
-#include <stdlib.h>  //for clear terminal
-#include <termios.h> //for fast keyboard inupt and raw mode
+#include <unistd.h>     //for sleep / falling animation
+#include <stdlib.h>     //for clear terminal
+#include <termios.h>    //for fast keyboard inupt and raw mode
 #include <sys/select.h> // to detect keyboard input without blocking
 
 void enable_raw_mode()
@@ -80,6 +80,24 @@ void erase_tetromino(struct Tetromino t)
         }
     }
 }
+int can_move_down(struct Tetromino t)  //collision detection for bottom wall
+{
+    int i, j;
+    for (i = 0; i < 4; i++)
+    {
+        for (j = 0; j < 4; j++)
+        {
+            if (t.shape[i][j] == 1)
+            {
+                if (t.row + i + 1 >= ROW)
+                {
+                    return 0;
+                }
+            }
+        }
+    }
+    return 1;
+}
 
 int main()
 {
@@ -105,12 +123,12 @@ int main()
                 if (key == 'a' || key == 'A')
                 {
                     if (current.col > 0)
-                    current.col--;
+                        current.col--;
                 }
                 else if (key == 'd' || key == 'D')
                 {
-                    if (current.col < COL -4)
-                    current.col++;
+                    if (current.col < COL - 4)
+                        current.col++;
                 }
                 /**else if (key == 's' || key == 'S')
                 {
@@ -122,7 +140,10 @@ int main()
                 }
             }
         }
-        current.row++;
+        if (can_move_down(current))
+        {
+            current.row++;
+        }
         draw_tetromino(current);
         system("clear");
         drawboard();
